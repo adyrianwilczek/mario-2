@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Mario 2</title>
+<title>Mario Retro</title>
 
 <style>
-
 body {
     margin:0;
-    background:black;
+    background:#000;
     overflow:hidden;
     font-family:monospace;
 }
@@ -24,11 +22,8 @@ canvas {
 }
 
 #menu {
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    position:fixed;
+    inset:0;
     background:#111;
     color:white;
     display:flex;
@@ -39,20 +34,21 @@ canvas {
 
 h1 {
     color:red;
-    font-size:45px;
+    font-size:50px;
+    text-shadow:4px 4px #700;
 }
 
 button {
+    font-family:monospace;
     font-size:25px;
-    margin:10px;
     padding:10px 30px;
+    margin:8px;
     background:#222;
     color:white;
     border:3px solid white;
 }
 
-
-#controls {
+#mobile {
     display:none;
     position:fixed;
     bottom:20px;
@@ -60,12 +56,11 @@ button {
     text-align:center;
 }
 
-.control {
-    width:70px;
-    height:70px;
+.mobileBtn {
+    width:80px;
+    height:80px;
     font-size:35px;
 }
-
 </style>
 
 </head>
@@ -75,39 +70,36 @@ button {
 
 <div id="menu">
 
-<h1>MARIO 2</h1>
+<h1>MARIO RETRO</h1>
 
 <button onclick="startGame()">PLAY</button>
-
-<button onclick="settings()">SETTINGS</button>
-
-<button onclick="howTo()">HOW TO PLAY</button>
+<button onclick="alert('Retro mode ON')">SETTINGS</button>
 
 </div>
 
 
-<canvas id="game" width="800" height="450"></canvas>
+
+<canvas id="game" width="900" height="500"></canvas>
 
 
-<div id="controls">
 
-<button class="control"
-ontouchstart="left=true"
-ontouchend="left=false">
+<div id="mobile">
+
+<button class="mobileBtn"
+ontouchstart="keys.left=true"
+ontouchend="keys.left=false">
 ⬅
 </button>
 
-
-<button class="control"
-ontouchstart="jump=true"
-ontouchend="jump=false">
+<button class="mobileBtn"
+ontouchstart="keys.jump=true"
+ontouchend="keys.jump=false">
 ⬆
 </button>
 
-
-<button class="control"
-ontouchstart="right=true"
-ontouchend="right=false">
+<button class="mobileBtn"
+ontouchstart="keys.right=true"
+ontouchend="keys.right=false">
 ➡
 </button>
 
@@ -117,7 +109,6 @@ ontouchend="right=false">
 
 <script>
 
-
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
@@ -125,48 +116,49 @@ const ctx=canvas.getContext("2d");
 let playing=false;
 
 
-let left=false;
-let right=false;
-let jump=false;
+let keys={
+left:false,
+right:false,
+jump:false
+};
 
 
 let player={
-
 x:100,
 y:300,
-
-w:35,
-h:45,
-
+w:40,
+h:50,
+vx:0,
+vy:0,
 speed:5,
-
-dy:0,
-
-grounded:false
-
+jumpPower:-15,
+ground:false,
+big:false
 };
 
 
 let gravity=0.7;
 
 
+let camera={
+x:0
+};
 
-let platforms=[
 
-{x:0,y:400,w:800,h:50},
 
-{x:200,y:320,w:130,h:20},
+let blocks=[
 
-{x:450,y:260,w:150,h:20},
+{x:0,y:450,w:3000,h:50},
 
-{x:750,y:340,w:150,h:20},
+{x:250,y:350,w:120,h:25},
 
-{x:1050,y:280,w:200,h:20}
+{x:550,y:280,w:150,h:25},
+
+{x:850,y:370,w:150,h:25},
+
+{x:1200,y:300,w:180,h:25}
 
 ];
-
-
-let cameraX=0;
 
 
 
@@ -174,55 +166,27 @@ function startGame(){
 
 document.getElementById("menu").style.display="none";
 
+if("ontouchstart" in window)
+document.getElementById("mobile").style.display="block";
+
 playing=true;
 
-
-if("ontouchstart" in window){
-
-document.getElementById("controls").style.display="block";
+loop();
 
 }
-
-
-gameLoop();
-
-}
-
-
-
-function settings(){
-
-alert("Retro mode ON\nSound soon");
-
-}
-
-
-
-function howTo(){
-
-alert(
-"PC:\n← → ruch\nSPACE skok\n\nTelefon:\nPrzyciski na ekranie"
-);
-
-}
-
 
 
 
 document.addEventListener("keydown",e=>{
 
+if(e.key==="ArrowLeft")
+keys.left=true;
 
-if(e.key=="ArrowLeft")
-left=true;
+if(e.key==="ArrowRight")
+keys.right=true;
 
-
-if(e.key=="ArrowRight")
-right=true;
-
-
-if(e.key==" " || e.key=="ArrowUp")
-jump=true;
-
+if(e.key===" " || e.key==="ArrowUp")
+keys.jump=true;
 
 });
 
@@ -230,21 +194,32 @@ jump=true;
 
 document.addEventListener("keyup",e=>{
 
+if(e.key==="ArrowLeft")
+keys.left=false;
 
-if(e.key=="ArrowLeft")
-left=false;
+if(e.key==="ArrowRight")
+keys.right=false;
 
-
-if(e.key=="ArrowRight")
-right=false;
-
-
-if(e.key==" " || e.key=="ArrowUp")
-jump=false;
-
+if(e.key===" " || e.key==="ArrowUp")
+keys.jump=false;
 
 });
 
+
+
+
+function hit(a,b){
+
+return (
+
+a.x < b.x+b.w &&
+a.x+a.w > b.x &&
+a.y < b.y+b.h &&
+a.y+a.h > b.y
+
+);
+
+}
 
 
 
@@ -252,75 +227,66 @@ jump=false;
 function update(){
 
 
-if(left)
-player.x-=player.speed;
+player.vx=0;
 
 
-if(right)
-player.x+=player.speed;
+if(keys.left)
+player.vx=-player.speed;
+
+
+if(keys.right)
+player.vx=player.speed;
+
+
+player.x+=player.vx;
 
 
 
-if(jump && player.grounded){
+if(keys.jump && player.ground){
 
-player.dy=-14;
-
-player.grounded=false;
+player.vy=player.jumpPower;
+player.ground=false;
 
 }
 
 
 
-player.dy+=gravity;
-
-player.y+=player.dy;
-
-
-player.grounded=false;
+player.vy+=gravity;
+player.y+=player.vy;
 
 
+player.ground=false;
 
-for(let p of platforms){
 
 
-if(
+for(let b of blocks){
 
-player.x < p.x+p.w &&
+if(hit(player,b)){
 
-player.x+player.w > p.x &&
 
-player.y+player.h > p.y &&
+if(player.vy>0){
 
-player.y+player.h < p.y+p.h+20 &&
-
-player.dy>=0
-
-){
-
-player.y=p.y-player.h;
-
-player.dy=0;
-
-player.grounded=true;
+player.y=b.y-player.h;
+player.vy=0;
+player.ground=true;
 
 }
 
 
 }
 
-
-
-if(player.x>400){
-
-cameraX=player.x-400;
-
 }
 
 
 
+camera.x=player.x-300;
+
+if(camera.x<0)
+camera.x=0;
+
+
+
 }
-
-
 
 
 
@@ -348,50 +314,52 @@ canvas.height
 
 
 
+// chmury
 
-for(let p of platforms){
-
-
-ctx.fillStyle="#8B4513";
-
+ctx.fillStyle="white";
 
 ctx.fillRect(
-p.x-cameraX,
-p.y,
-p.w,
-p.h
+150-camera.x,
+80,
+100,
+30
+);
+
+ctx.fillRect(
+180-camera.x,
+60,
+60,
+30
 );
 
 
 
-ctx.fillStyle="#00aa00";
+// mapa
+
+for(let b of blocks){
+
+ctx.fillStyle="#8b4513";
 
 ctx.fillRect(
-p.x-cameraX,
-p.y,
-p.w,
-5
+b.x-camera.x,
+b.y,
+b.w,
+b.h
 );
-
 
 }
 
 
 
+// gracz
 
-ctx.fillStyle="red";
-
+ctx.fillStyle=player.big?"orange":"red";
 
 ctx.fillRect(
-
-player.x-cameraX,
-
+player.x-camera.x,
 player.y,
-
 player.w,
-
 player.h
-
 );
 
 
@@ -411,10 +379,7 @@ ctx.fillText(
 
 
 
-
-
-function gameLoop(){
-
+function loop(){
 
 if(!playing)
 return;
@@ -425,226 +390,72 @@ update();
 draw();
 
 
-requestAnimationFrame(gameLoop);
-
+requestAnimationFrame(loop);
 
 }
 
-// ===== CZĘŚĆ 2 - ELEMENTY GRY =====
+
+let score=0;
+let lives=3;
+let worldNumber=1;
+let finished=false;
 
 
-let score = 0;
-let lives = 3;
-let paused = false;
-let win = false;
 
+let coins=[
 
-let coins = [
-
-{x:300,y:280,taken:false},
-{x:520,y:220,taken:false},
-{x:800,y:300,taken:false},
-{x:1100,y:240,taken:false}
+{x:500,y:300,taken:false},
+{x:900,y:220,taken:false},
+{x:1400,y:260,taken:false},
+{x:2200,y:300,taken:false}
 
 ];
 
 
-let enemies = [
+
+let enemies=[
 
 {
-x:650,
-y:360,
-w:35,
-h:35,
+x:700,
+y:410,
+w:40,
+h:40,
 speed:2,
+alive:true
+},
+
+{
+x:1700,
+y:410,
+w:40,
+h:40,
+speed:3,
 alive:true
 }
 
 ];
 
 
-let mushroom = {
 
-x:950,
+let castle={
+
+x:5600,
 y:250,
-taken:false
-
-};
-
-
-let finish = {
-
-x:1300,
-y:300,
-w:30,
-h:100
+w:150,
+h:200
 
 };
 
 
 
 
-// dodanie rzeczy do update
+// drugi świat
 
-let oldUpdate = update;
+let lavaCastle={
 
-
-update=function(){
-
-
-if(paused || win)
-return;
-
-
-oldUpdate();
-
-
-
-// monety
-
-for(let c of coins){
-
-if(!c.taken &&
-
-player.x < c.x+20 &&
-
-player.x+player.w > c.x &&
-
-player.y < c.y+20 &&
-
-player.y+player.h > c.y
-
-){
-
-c.taken=true;
-
-score+=10;
-
-}
-
-}
-
-
-
-// przeciwnicy
-
-for(let e of enemies){
-
-
-if(!e.alive)
-continue;
-
-
-e.x+=e.speed;
-
-
-if(e.x>900 || e.x<600){
-
-e.speed*=-1;
-
-}
-
-
-
-if(
-
-player.x < e.x+e.w &&
-
-player.x+player.w > e.x &&
-
-player.y < e.y+e.h &&
-
-player.y+player.h > e.y
-
-){
-
-
-if(player.dy>0){
-
-e.alive=false;
-
-score+=50;
-
-player.dy=-10;
-
-}
-
-else{
-
-
-lives--;
-
-player.x=100;
-
-player.y=300;
-
-
-if(lives<=0){
-
-alert("GAME OVER\nPunkty: "+score);
-
-location.reload();
-
-}
-
-
-}
-
-
-}
-
-
-}
-
-
-
-
-// power-up
-
-if(!mushroom.taken &&
-
-player.x<mushroom.x+30 &&
-
-player.x+player.w>mushroom.x &&
-
-player.y<mushroom.y+30 &&
-
-player.y+player.h>mushroom.y
-
-){
-
-mushroom.taken=true;
-
-score+=100;
-
-player.w=45;
-
-player.h=60;
-
-}
-
-
-
-
-// meta
-
-if(
-
-player.x < finish.x+finish.w &&
-
-player.x+player.w > finish.x &&
-
-player.y < finish.y+finish.h &&
-
-player.y+player.h > finish.y
-
-){
-
-win=true;
-
-}
-
-
+x:6000,
+y:0,
+active:false
 
 };
 
@@ -652,304 +463,15 @@ win=true;
 
 
 
-// dodanie rysowania
-
-
-let oldDraw=draw;
-
-
-draw=function(){
-
-
-oldDraw();
-
-
-
-// monety
-
-for(let c of coins){
-
-
-if(!c.taken){
-
-
-ctx.fillStyle="yellow";
-
-
-ctx.beginPath();
-
-ctx.arc(
-
-c.x-cameraX,
-
-c.y,
-
-10,
-
-0,
-
-Math.PI*2
-
-);
-
-ctx.fill();
-
-
-}
-
-
-}
-
-
-
-
-// przeciwnicy
-
-
-for(let e of enemies){
-
-
-if(e.alive){
-
-
-ctx.fillStyle="purple";
-
-
-ctx.fillRect(
-
-e.x-cameraX,
-
-e.y,
-
-e.w,
-
-e.h
-
-);
-
-
-}
-
-
-}
-
-
-
-
-// grzybek
-
-
-if(!mushroom.taken){
-
-
-ctx.fillStyle="red";
-
-
-ctx.fillRect(
-
-mushroom.x-cameraX,
-
-mushroom.y,
-
-30,
-
-30
-
-);
-
-
-}
-
-
-
-
-
-// meta
-
-
-ctx.fillStyle="white";
-
-
-ctx.fillRect(
-
-finish.x-cameraX,
-
-finish.y,
-
-finish.w,
-
-finish.h
-
-);
-
-
-
-
-
-// informacje
-
-
-ctx.fillStyle="white";
-
-ctx.font="20px monospace";
-
-
-ctx.fillText(
-
-"COINS: "+score,
-
-20,
-
-60
-
-);
-
-
-ctx.fillText(
-
-"LIVES: "+lives,
-
-20,
-
-85
-
-);
-
-
-
-
-
-if(win){
-
-
-ctx.fillStyle="black";
-
-ctx.fillRect(
-
-150,
-
-150,
-
-500,
-
-150
-
-);
-
-
-
-ctx.fillStyle="yellow";
-
-ctx.font="40px monospace";
-
-
-ctx.fillText(
-
-"LEVEL COMPLETE!",
-
-200,
-
-240
-
-);
-
-
-}
-
-
-};
-
-
-
-
-
-
-// pauza ESC
-
-
-document.addEventListener("keydown",e=>{
-
-
-if(e.key=="Escape"){
-
-
-paused=!paused;
-
-
-}
-
-
-});
-
-// ===== CZĘŚĆ 2 - PEŁNA GRA =====
-
-
-let coins = [
-    {x:250,y:300,taken:false},
-    {x:520,y:230,taken:false},
-    {x:850,y:320,taken:false},
-    {x:1200,y:250,taken:false}
-];
-
-
-let enemies = [
-    {
-        x:700,
-        y:400,
-        w:40,
-        h:40,
-        speed:2,
-        alive:true
-    },
-
-    {
-        x:1100,
-        y:400,
-        w:40,
-        h:40,
-        speed:2,
-        alive:true
-    }
-];
-
-
-let mushroom = {
-
-    x:1000,
-    y:250,
-    taken:false
-
-};
-
-
-let finish = {
-
-    x:1500,
-    y:350,
-    w:30,
-    h:100
-
-};
-
-
-let score=0;
-let lives=3;
-let big=false;
-let gameOver=false;
-let win=false;
-
-
-
-
-// dodajemy do update
 
 let oldUpdate=update;
 
 
+
 update=function(){
 
 
-if(gameOver || win)
+if(finished)
 return;
 
 
@@ -957,20 +479,20 @@ oldUpdate();
 
 
 
-// MONETY
+// monety
 
 for(let c of coins){
 
 
 if(!c.taken &&
 
-player.x < c.x+20 &&
+player.x<c.x+20 &&
 
-player.x+player.width > c.x &&
+player.x+player.w>c.x &&
 
-player.y < c.y+20 &&
+player.y<c.y+20 &&
 
-player.y+player.height > c.y
+player.y+player.h>c.y
 
 ){
 
@@ -982,13 +504,13 @@ score+=10;
 
 }
 
-
 }
 
 
 
 
-// WROGOWIE
+
+// przeciwnicy
 
 
 for(let e of enemies){
@@ -998,17 +520,11 @@ if(!e.alive)
 continue;
 
 
-
 e.x+=e.speed;
 
 
-
-if(e.x>1200 || e.x<600){
-
+if(e.x>e.x+200 || e.x<500)
 e.speed*=-1;
-
-}
-
 
 
 
@@ -1033,16 +549,15 @@ else{
 
 lives--;
 
-
 player.x=100;
-
 player.y=300;
-
 
 
 if(lives<=0){
 
-gameOver=true;
+alert("GAME OVER");
+
+location.reload();
 
 }
 
@@ -1053,40 +568,6 @@ gameOver=true;
 }
 
 
-}
-
-
-
-
-
-
-// GRZYBEK
-
-
-if(!mushroom.taken &&
-
-collision(player,{
-x:mushroom.x,
-y:mushroom.y,
-w:30,
-h:30,
-width:30,
-height:30
-})
-
-){
-
-
-mushroom.taken=true;
-
-big=true;
-
-player.width=50;
-
-player.height=65;
-
-score+=100;
-
 
 }
 
@@ -1096,25 +577,34 @@ score+=100;
 
 
 
-// META
+// zamek
 
 
 if(collision(player,{
 
-x:finish.x,
-y:finish.y,
-w:finish.w,
-h:finish.h,
-width:finish.w,
-height:finish.h
+x:castle.x,
+y:castle.y,
+w:castle.w,
+h:castle.h
 
 })){
 
 
-win=true;
+worldNumber=2;
+
+lavaCastle.active=true;
+
+
+player.x=100;
+
+
+alert("WORLD 2 - LAVA CASTLE");
 
 
 }
+
+
+
 
 
 
@@ -1127,8 +617,6 @@ win=true;
 
 
 
-// dodajemy do draw
-
 
 let oldDraw=draw;
 
@@ -1140,8 +628,7 @@ oldDraw();
 
 
 
-
-// MONETY
+// monety
 
 
 for(let c of coins){
@@ -1158,11 +645,11 @@ ctx.beginPath();
 
 ctx.arc(
 
-c.x-camera.x,
+c.x-camera,
 
 c.y,
 
-12,
+10,
 
 0,
 
@@ -1176,16 +663,12 @@ ctx.fill();
 
 }
 
-
 }
 
 
 
 
-
-
-
-// WROGOWIE
+// przeciwnicy
 
 
 for(let e of enemies){
@@ -1199,7 +682,7 @@ ctx.fillStyle="purple";
 
 ctx.fillRect(
 
-e.x-camera.x,
+e.x-camera,
 
 e.y,
 
@@ -1220,55 +703,40 @@ e.h
 
 
 
-
-// GRZYBEK
-
-
-if(!mushroom.taken){
+// zamek
 
 
-ctx.fillStyle="red";
+ctx.fillStyle="#555";
 
 
 ctx.fillRect(
 
-mushroom.x-camera.x,
+castle.x-camera,
 
-mushroom.y,
+castle.y,
 
-30,
+castle.w,
 
-30
+castle.h
 
 );
 
 
-}
 
-
-
-
-
-
-
-// META
-
-
-ctx.fillStyle="white";
+ctx.fillStyle="#222";
 
 
 ctx.fillRect(
 
-finish.x-camera.x,
+castle.x+55-camera,
 
-finish.y,
+castle.y+120,
 
-finish.w,
+40,
 
-finish.h
+80
 
 );
-
 
 
 
@@ -1307,68 +775,43 @@ ctx.fillText(
 
 
 
-
-
-
-
-
-// KONIEC
-
-
-if(gameOver){
-
-
-ctx.fillStyle="black";
-
-
-ctx.fillRect(
-200,
-150,
-500,
-150
-);
-
-
-
-ctx.fillStyle="red";
-
-ctx.font="45px monospace";
-
-
 ctx.fillText(
 
-"GAME OVER",
+"WORLD: "+worldNumber,
 
-300,
+20,
 
-240
+120
 
 );
 
 
-}
 
 
 
 
 
+if(lavaCastle.active){
 
-if(win){
 
-
-ctx.fillStyle="black";
+ctx.fillStyle="#ff5500";
 
 
 ctx.fillRect(
-150,
-150,
-600,
-150
+
+camera,
+
+0,
+
+900,
+
+500
+
 );
 
 
 
-ctx.fillStyle="yellow";
+ctx.fillStyle="#333";
 
 
 ctx.font="40px monospace";
@@ -1376,16 +819,17 @@ ctx.font="40px monospace";
 
 ctx.fillText(
 
-"LEVEL COMPLETE!",
+"LAVA CASTLE",
 
-220,
+250,
 
-240
+100
 
 );
 
 
 }
+
 
 
 
@@ -1394,7 +838,7 @@ ctx.fillText(
 
 
 
-
+// koniec pliku
 
 </script>
 
