@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Mario Retro</title>
+<title>Mario 2</title>
 
 <style>
 
@@ -75,7 +75,7 @@ button {
 
 <div id="menu">
 
-<h1>MARIO RETRO</h1>
+<h1>MARIO 2</h1>
 
 <button onclick="startGame()">PLAY</button>
 
@@ -880,6 +880,519 @@ paused=!paused;
 
 
 });
+
+// ===== CZĘŚĆ 2 - PEŁNA GRA =====
+
+
+let coins = [
+    {x:250,y:300,taken:false},
+    {x:520,y:230,taken:false},
+    {x:850,y:320,taken:false},
+    {x:1200,y:250,taken:false}
+];
+
+
+let enemies = [
+    {
+        x:700,
+        y:400,
+        w:40,
+        h:40,
+        speed:2,
+        alive:true
+    },
+
+    {
+        x:1100,
+        y:400,
+        w:40,
+        h:40,
+        speed:2,
+        alive:true
+    }
+];
+
+
+let mushroom = {
+
+    x:1000,
+    y:250,
+    taken:false
+
+};
+
+
+let finish = {
+
+    x:1500,
+    y:350,
+    w:30,
+    h:100
+
+};
+
+
+let score=0;
+let lives=3;
+let big=false;
+let gameOver=false;
+let win=false;
+
+
+
+
+// dodajemy do update
+
+let oldUpdate=update;
+
+
+update=function(){
+
+
+if(gameOver || win)
+return;
+
+
+oldUpdate();
+
+
+
+// MONETY
+
+for(let c of coins){
+
+
+if(!c.taken &&
+
+player.x < c.x+20 &&
+
+player.x+player.width > c.x &&
+
+player.y < c.y+20 &&
+
+player.y+player.height > c.y
+
+){
+
+
+c.taken=true;
+
+score+=10;
+
+
+}
+
+
+}
+
+
+
+
+// WROGOWIE
+
+
+for(let e of enemies){
+
+
+if(!e.alive)
+continue;
+
+
+
+e.x+=e.speed;
+
+
+
+if(e.x>1200 || e.x<600){
+
+e.speed*=-1;
+
+}
+
+
+
+
+if(collision(player,e)){
+
+
+
+if(player.vy>0){
+
+
+e.alive=false;
+
+player.vy=-10;
+
+score+=50;
+
+
+}
+
+else{
+
+
+lives--;
+
+
+player.x=100;
+
+player.y=300;
+
+
+
+if(lives<=0){
+
+gameOver=true;
+
+}
+
+
+}
+
+
+}
+
+
+}
+
+
+
+
+
+
+// GRZYBEK
+
+
+if(!mushroom.taken &&
+
+collision(player,{
+x:mushroom.x,
+y:mushroom.y,
+w:30,
+h:30,
+width:30,
+height:30
+})
+
+){
+
+
+mushroom.taken=true;
+
+big=true;
+
+player.width=50;
+
+player.height=65;
+
+score+=100;
+
+
+}
+
+
+
+
+
+
+
+// META
+
+
+if(collision(player,{
+
+x:finish.x,
+y:finish.y,
+w:finish.w,
+h:finish.h,
+width:finish.w,
+height:finish.h
+
+})){
+
+
+win=true;
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+// dodajemy do draw
+
+
+let oldDraw=draw;
+
+
+draw=function(){
+
+
+oldDraw();
+
+
+
+
+// MONETY
+
+
+for(let c of coins){
+
+
+if(!c.taken){
+
+
+ctx.fillStyle="yellow";
+
+
+ctx.beginPath();
+
+
+ctx.arc(
+
+c.x-camera.x,
+
+c.y,
+
+12,
+
+0,
+
+Math.PI*2
+
+);
+
+
+ctx.fill();
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+// WROGOWIE
+
+
+for(let e of enemies){
+
+
+if(e.alive){
+
+
+ctx.fillStyle="purple";
+
+
+ctx.fillRect(
+
+e.x-camera.x,
+
+e.y,
+
+e.w,
+
+e.h
+
+);
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+// GRZYBEK
+
+
+if(!mushroom.taken){
+
+
+ctx.fillStyle="red";
+
+
+ctx.fillRect(
+
+mushroom.x-camera.x,
+
+mushroom.y,
+
+30,
+
+30
+
+);
+
+
+}
+
+
+
+
+
+
+
+// META
+
+
+ctx.fillStyle="white";
+
+
+ctx.fillRect(
+
+finish.x-camera.x,
+
+finish.y,
+
+finish.w,
+
+finish.h
+
+);
+
+
+
+
+
+
+
+
+// HUD
+
+
+ctx.fillStyle="white";
+
+ctx.font="22px monospace";
+
+
+ctx.fillText(
+
+"COINS: "+score,
+
+20,
+
+60
+
+);
+
+
+ctx.fillText(
+
+"LIVES: "+lives,
+
+20,
+
+90
+
+);
+
+
+
+
+
+
+
+
+// KONIEC
+
+
+if(gameOver){
+
+
+ctx.fillStyle="black";
+
+
+ctx.fillRect(
+200,
+150,
+500,
+150
+);
+
+
+
+ctx.fillStyle="red";
+
+ctx.font="45px monospace";
+
+
+ctx.fillText(
+
+"GAME OVER",
+
+300,
+
+240
+
+);
+
+
+}
+
+
+
+
+
+
+if(win){
+
+
+ctx.fillStyle="black";
+
+
+ctx.fillRect(
+150,
+150,
+600,
+150
+);
+
+
+
+ctx.fillStyle="yellow";
+
+
+ctx.font="40px monospace";
+
+
+ctx.fillText(
+
+"LEVEL COMPLETE!",
+
+220,
+
+240
+
+);
+
+
+}
+
+
+
+};
+
+
+
 
 
 
